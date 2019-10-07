@@ -8,6 +8,12 @@ Honorcup Marathon 2](https://codeforces.com/contest/1235/problem/A1)
 $ for f in data/data_train/64/*; do echo $f; python main.py $f 8 8 >> A1.txt; done^C
 ```
 
+## Todo
+
+- [ ] Handle 16-bit greyscale images
+- [ ] Implement segmenter
+- [ ] Implement shifter
+
 [1]: D. Pomeranz, M. Shemesh, and O. Ben-Shahar, [A fully automated greedy square jigsaw puzzle
 solver](https://www.cs.bgu.ac.il/~ben-shahar/Publications/2011-Pomeranz_Shemesh_and_Ben_Shahar-A_Fully_Automated_Greedy_Square_Jigsaw_Puzzle_Solver.pdf),
 In the Proceedings of the IEEE International Conference on Computer Vision and Pattern Recognition
