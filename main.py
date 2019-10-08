@@ -42,8 +42,11 @@ def build_dissimilarity_matrix(squares):
 
 
 def calculate_compatibility(dissimilarity_matrix, i, j, relation):
+    percentile = np.percentile(np.delete(dissimilarity_matrix[relation][i], i), 25)
+    if percentile == 0:
+        percentile = 2.220446049250313e-16
     return np.exp(-dissimilarity_matrix[relation][i][j] /
-                  np.percentile(np.delete(dissimilarity_matrix[relation][i], i), 25))
+                  percentile)
 
 
 def build_compatibility_matrix(squares):
