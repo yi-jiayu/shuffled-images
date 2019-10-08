@@ -12,7 +12,7 @@ DOWN = 3
 
 
 def calculate_dissimilarity(x_i, x_j, relation):
-    nrows, ncols, _ = x_i.shape
+    nrows, ncols = x_i.shape[0], x_i.shape[1]
 
     if relation == LEFT:
         return calculate_dissimilarity(x_j, x_i, RIGHT)
@@ -250,8 +250,12 @@ def place_remaining_parts(puzzle, compatibility_matrix, unallocated_parts):
 
 
 def solve(image_path, nrows, ncols):
-    # load image and convert to LAB colour space
-    image = color.rgb2lab(io.imread(image_path))
+    # load image
+    image = io.imread(image_path)
+
+    #  convert to LAB colour space if RGB
+    if image.ndim > 2:
+        image = color.rgb2lab(image)
 
     # split into squares
     squares = list(
@@ -271,10 +275,13 @@ def solve(image_path, nrows, ncols):
 if __name__ == '__main__':
     import sys
     import os.path
+    import time
 
+    start_time = time.monotonic()
     image_path, nrows, ncols = sys.argv[1:4]
     basename = os.path.basename(image_path)
 
     solution = solve(image_path, int(nrows), int(ncols))
     print(basename)
     print(' '.join(str(x) for x in solution))
+    print(f'{basename},{time.monotonic() - start_time}', file=sys.stderr)

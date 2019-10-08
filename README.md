@@ -10,7 +10,7 @@ $ for f in data/data_train/64/*; do echo $f; python main.py $f 8 8 >> A1.txt; do
 
 ## Todo
 
-- [ ] Handle 16-bit greyscale images
+- [x] Handle 16-bit greyscale images
 - [ ] Implement segmenter
 - [ ] Implement shifter
 
