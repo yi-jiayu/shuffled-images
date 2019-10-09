@@ -347,7 +347,7 @@ def segment(puzzle, best_neighbours):
         if unassigned_coords.size == 0:
             break
 
-        stack = [unassigned_coords[0]]
+        stack = [np.random.choice(unassigned_coords)]
         while stack:
             i, j = stack.pop()
             segments[i][j] = segment_counter
