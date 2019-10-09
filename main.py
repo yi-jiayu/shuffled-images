@@ -328,6 +328,15 @@ def calculate_best_buddies_metric(puzzle, best_neighbours):
     return num_best_buddies / num_edges
 
 
+def is_part_in_segment(puzzle, best_neighbours, segments, segment, i, j):
+    for relation in range(4):
+        x, y = related_coords(relation, i, j)
+        if is_in_grid(segments, x, y) and segments[x][y] == segment:
+            if not best_buddies(best_neighbours, relation, puzzle[i][j], puzzle[x][y]):
+                return False
+    return True
+
+
 def segment(puzzle, best_neighbours):
     nrows, ncols = puzzle.shape
     segments = np.zeros((nrows, ncols), dtype=int)
@@ -342,10 +351,9 @@ def segment(puzzle, best_neighbours):
         while stack:
             i, j = stack.pop()
             segments[i][j] = segment_counter
-            for relation in range(4):
-                x, y = related_coords(relation, i, j)
+            for x, y in adjacent(i, j):
                 if is_in_grid(segments, x, y):
-                    if segments[x][y] == 0 and best_buddies(best_neighbours, relation, puzzle[i][j], puzzle[x][y]):
+                    if segments[x][y] == 0 and is_part_in_segment(puzzle, best_neighbours, segments, segment_counter, x, y):
                         stack.append((x, y))
         segment_counter += 1
     return segments
