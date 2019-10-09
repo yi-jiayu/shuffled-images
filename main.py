@@ -145,7 +145,6 @@ def best_buddies(best_neighbours, relation, i, j):
 
 # part fits in slot if it is best buddies with all the occupied neighbours of that slot
 def does_part_fit_in_slot(puzzle, best_neighbours, slot, part):
-    nrows, ncols = puzzle.shape
     i, j = slot
 
     for relation in range(4):
@@ -234,15 +233,15 @@ def initialise_solution(squares, nrows, ncols):
     unallocated_parts = set(range(nrows * ncols))
 
     # calculate best seed and place in centre of solution
-    best_estimated_seed = find_best_estimated_seed(calculate_best_neighbours(compatibility_matrix))
+    best_neighbours = calculate_best_neighbours(compatibility_matrix)
+    best_estimated_seed = find_best_estimated_seed(best_neighbours)
     solution[nrows // 2][ncols // 2] = best_estimated_seed
     unallocated_parts.remove(best_estimated_seed)
 
-    return solution, compatibility_matrix, unallocated_parts
+    return solution, compatibility_matrix, best_neighbours, unallocated_parts
 
 
-def place_remaining_parts(puzzle, compatibility_matrix, unallocated_parts):
-    best_neighbours = calculate_best_neighbours(compatibility_matrix)
+def place_remaining_parts(puzzle, compatibility_matrix, best_neighbours, unallocated_parts):
     candidate_slots = find_candidate_slots(puzzle)
 
     while True:
@@ -279,14 +278,34 @@ def solve(image_path, nrows, ncols):
         itertools.chain.from_iterable(np.hsplit(r, ncols) for r in np.split(image, nrows)))
 
     # initialise solution
-    solution, compatibility_matrix, unallocated_parts = initialise_solution(squares, nrows, ncols)
+    solution, compatibility_matrix, best_neighbours, unallocated_parts = initialise_solution(squares, nrows, ncols)
 
     # assign remaining parts
     while unallocated_parts:
-        solution, unallocated_parts = place_remaining_parts(solution, compatibility_matrix, unallocated_parts)
+        solution, unallocated_parts = place_remaining_parts(solution, compatibility_matrix, best_neighbours,
+                                                            unallocated_parts)
 
     # return solution as a 1-D array
-    return np.ravel(solution)
+    return np.ravel(solution), calculate_best_buddies_metric(solution, best_neighbours)
+
+
+def calculate_best_buddies_metric(puzzle, best_neighbours):
+    nrows, ncols = puzzle.shape
+    num_edges = (nrows - 1) * ncols + (ncols - 1) * nrows
+    num_best_buddies = 0
+
+    # left/right
+    for i in range(nrows):
+        for j in range(ncols - 1):
+            if best_buddies(best_neighbours, RIGHT, puzzle[i][j], puzzle[i][j + 1]):
+                num_best_buddies += 1
+    # up/down
+    for i in range(nrows - 1):
+        for j in range(ncols):
+            if best_buddies(best_neighbours, DOWN, puzzle[i][j], puzzle[i + 1][j]):
+                num_best_buddies += 1
+
+    return num_best_buddies / num_edges
 
 
 if __name__ == '__main__':
@@ -298,7 +317,7 @@ if __name__ == '__main__':
     image_path, nrows, ncols = sys.argv[1:4]
     basename = os.path.basename(image_path)
 
-    solution = solve(image_path, int(nrows), int(ncols))
+    solution, best_buddies_metric = solve(image_path, int(nrows), int(ncols))
     print(basename)
     print(' '.join(str(x) for x in solution))
-    print(f'{basename},{time.monotonic() - start_time}', file=sys.stderr)
+    print(f'{basename},{time.monotonic() - start_time},{best_buddies_metric}', file=sys.stderr)
