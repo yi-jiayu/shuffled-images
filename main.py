@@ -111,13 +111,13 @@ def adjacent(i, j):
     yield i, j + 1
 
 
-def is_in_puzzle(puzzle, i, j):
-    nrows, ncols = puzzle.shape
+def is_in_grid(grid, i, j):
+    nrows, ncols = grid.shape
     return 0 <= i < nrows and 0 <= j < ncols
 
 
 def is_occupied_slot(puzzle, i, j):
-    return is_in_puzzle(puzzle, i, j) and puzzle[i][j] >= 0
+    return is_in_grid(puzzle, i, j) and puzzle[i][j] >= 0
 
 
 def find_candidate_slots(puzzle):
@@ -190,7 +190,7 @@ def try_assign(puzzle, slot, part, unallocated_parts):
     nrows, ncols = puzzle.shape
     # can always assign if slot is within puzzle
     i, j = slot
-    if not is_in_puzzle(puzzle, i, j):
+    if not is_in_grid(puzzle, i, j):
         # check if opposite edge is empty and roll puzzle
         # slot is above top edge - check if bottom edge is empty
         if i < 0:
@@ -280,13 +280,36 @@ def solve(image_path, nrows, ncols):
     # initialise solution
     solution, compatibility_matrix, best_neighbours, unallocated_parts = initialise_solution(squares, nrows, ncols)
 
-    # assign remaining parts
+    best_score = 0
+    best_solution = None
+    iterations = 0
+    while True:
+        iterations += 1
+
+        # placer
+        solution = placer(solution, compatibility_matrix, best_neighbours, unallocated_parts)
+        score = calculate_best_buddies_metric(solution, best_neighbours)
+        if score <= best_score:
+            break
+        best_score = score
+        best_solution = solution
+
+        # segmenter
+        segments = segment(solution, best_neighbours)
+        masked = mask_largest_segment(solution, segments)
+
+        # shifter
+        solution, unallocated_parts = center_occupied_in_grid(masked)
+
+    # return solution as a 1-D array
+    return np.ravel(best_solution), best_score, iterations
+
+
+def placer(solution, compatibility_matrix, best_neighbours, unallocated_parts):
     while unallocated_parts:
         solution, unallocated_parts = place_remaining_parts(solution, compatibility_matrix, best_neighbours,
                                                             unallocated_parts)
-
-    # return solution as a 1-D array
-    return np.ravel(solution), calculate_best_buddies_metric(solution, best_neighbours)
+    return solution
 
 
 def calculate_best_buddies_metric(puzzle, best_neighbours):
@@ -308,6 +331,50 @@ def calculate_best_buddies_metric(puzzle, best_neighbours):
     return num_best_buddies / num_edges
 
 
+def segment(puzzle, best_neighbours):
+    nrows, ncols = puzzle.shape
+    segments = np.zeros((nrows, ncols), dtype=int)
+    segment_counter = 1
+
+    while True:
+        unassigned_coords = np.argwhere(segments == 0)
+        if unassigned_coords.size == 0:
+            break
+
+        stack = [unassigned_coords[0]]
+        while stack:
+            i, j = stack.pop()
+            segments[i][j] = segment_counter
+            for relation in range(4):
+                x, y = related_coords(relation, i, j)
+                if is_in_grid(segments, x, y):
+                    if segments[x][y] == 0 and best_buddies(best_neighbours, relation, puzzle[i][j], puzzle[x][y]):
+                        stack.append((x, y))
+        segment_counter += 1
+    return segments
+
+
+def largest_segment_index(segments):
+    segment_indices, counts = np.unique(segments, return_counts=True)
+    return segment_indices[np.argmax(counts)]
+
+
+def mask_largest_segment(puzzle, segments):
+    return np.where(segments == largest_segment_index(segments), puzzle, -1)
+
+
+def center_occupied_in_grid(puzzle):
+    nrows, ncols = puzzle.shape
+    rows, cols = np.nonzero(puzzle + 1)
+    delta_y = nrows // 2 - (max(rows) + min(rows)) // 2 - 1
+    delta_x = ncols // 2 - (max(cols) + min(cols)) // 2 - 1
+    puzzle = np.roll(puzzle, delta_y, 0)
+    puzzle = np.roll(puzzle, delta_x, 1)
+    allocated_parts = set(puzzle[puzzle != -1])
+    unallocated_parts = set(range(nrows * ncols)) - allocated_parts
+    return puzzle, unallocated_parts
+
+
 if __name__ == '__main__':
     import sys
     import os.path
@@ -317,7 +384,7 @@ if __name__ == '__main__':
     image_path, nrows, ncols = sys.argv[1:4]
     basename = os.path.basename(image_path)
 
-    solution, best_buddies_metric = solve(image_path, int(nrows), int(ncols))
+    solution, score, iterations = solve(image_path, int(nrows), int(ncols))
     print(basename)
     print(' '.join(str(x) for x in solution))
-    print(f'{basename},{time.monotonic() - start_time},{best_buddies_metric}', file=sys.stderr)
+    print(f'{basename},{time.monotonic() - start_time},{score},{iterations}', file=sys.stderr)
