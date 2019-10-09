@@ -277,7 +277,7 @@ def solve(image_path, nrows, ncols):
     # initialise solution
     solution, compatibility_matrix, best_neighbours, unallocated_parts = initialise_solution(squares, nrows, ncols)
 
-    best_score = 0
+    best_score = -1
     best_solution = None
     iterations = 0
     while True:
