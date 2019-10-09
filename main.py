@@ -122,19 +122,16 @@ def is_occupied_slot(puzzle, i, j):
 
 def find_candidate_slots(puzzle):
     slots = {}
-    nrows, ncols = puzzle.shape
-    for i in range(nrows):
-        for j in range(ncols):
-            if puzzle[i][j] >= 0:
-                for x, y in adjacent(i, j):
-                    # skip if we've already added this slot
-                    if (x, y) in slots:
-                        continue
-                    # skip if (x, y) is already occupied
-                    if is_occupied_slot(puzzle, x, y):
-                        continue
-                    # count the number of occupied slots around (x, y)
-                    slots[(x, y)] = sum(1 if is_occupied_slot(puzzle, p, q) else 0 for p, q in adjacent(x, y))
+    for i, j in np.argwhere(puzzle != -1):
+        for x, y in adjacent(i, j):
+            # skip if we've already added this slot
+            if (x, y) in slots:
+                continue
+            # skip if (x, y) is already occupied
+            if is_occupied_slot(puzzle, x, y):
+                continue
+            # count the number of occupied slots around (x, y)
+            slots[(x, y)] = sum(1 if is_occupied_slot(puzzle, p, q) else 0 for p, q in adjacent(x, y))
     max_neighbours = max(slots.values())
     return set(slot for slot, num_neighbours in slots.items() if num_neighbours == max_neighbours)
 
@@ -284,13 +281,13 @@ def solve(image_path, nrows, ncols):
     best_solution = None
     iterations = 0
     while True:
-        iterations += 1
-
         # placer
         solution = placer(solution, compatibility_matrix, best_neighbours, unallocated_parts)
         score = calculate_best_buddies_metric(solution, best_neighbours)
         if score <= best_score:
             break
+
+        iterations += 1
         best_score = score
         best_solution = solution
 
