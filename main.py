@@ -347,13 +347,14 @@ def segment(puzzle, best_neighbours):
         if unassigned_coords.size == 0:
             break
 
-        stack = [np.random.choice(unassigned_coords)]
+        stack = [unassigned_coords[np.random.choice(range(len(unassigned_coords)))]]
         while stack:
             i, j = stack.pop()
             segments[i][j] = segment_counter
             for x, y in adjacent(i, j):
                 if is_in_grid(segments, x, y):
-                    if segments[x][y] == 0 and is_part_in_segment(puzzle, best_neighbours, segments, segment_counter, x, y):
+                    if segments[x][y] == 0 and \
+                            is_part_in_segment(puzzle, best_neighbours, segments, segment_counter, x, y):
                         stack.append((x, y))
         segment_counter += 1
     return segments
