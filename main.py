@@ -231,9 +231,10 @@ def initialise_solution(squares, nrows, ncols):
 
     # calculate best seed and place in centre of solution
     best_neighbours = calculate_best_neighbours(compatibility_matrix)
-    best_estimated_seed = find_best_estimated_seed(best_neighbours)
-    solution[nrows // 2][ncols // 2] = best_estimated_seed
-    unallocated_parts.remove(best_estimated_seed)
+    # seed = find_best_estimated_seed(best_neighbours)
+    seed = np.random.randint(nrows * ncols)
+    solution[nrows // 2][ncols // 2] = seed
+    unallocated_parts.remove(seed)
 
     return solution, compatibility_matrix, best_neighbours, unallocated_parts
 
@@ -390,7 +391,12 @@ if __name__ == '__main__':
     image_path, nrows, ncols = sys.argv[1:4]
     basename = os.path.basename(image_path)
 
-    solution, score, iterations = solve(image_path, int(nrows), int(ncols))
+    attempts = []
+    for i in range(10):
+        attempts.append(solve(image_path, int(nrows), int(ncols)))
+
+    best_attempt = max(attempts, key=lambda x: x[1])
+    solution, score, iterations = best_attempt
     print(basename)
     print(' '.join(str(x) for x in solution))
     print(f'{basename},{time.monotonic() - start_time},{score},{iterations}', file=sys.stderr)
