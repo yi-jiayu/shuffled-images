@@ -223,16 +223,13 @@ def try_assign(puzzle, slot, part, unallocated_parts):
     return puzzle, unallocated_parts
 
 
-def initialise_solution(squares, nrows, ncols):
+def initialise_solution(squares, nrows, ncols, seed):
     # initialise compatibility matrix
     compatibility_matrix = build_compatibility_matrix(squares)
+    best_neighbours = calculate_best_neighbours(compatibility_matrix)
     solution = np.full((nrows, ncols), -1)
     unallocated_parts = set(range(nrows * ncols))
 
-    # calculate best seed and place in centre of solution
-    best_neighbours = calculate_best_neighbours(compatibility_matrix)
-    # seed = find_best_estimated_seed(best_neighbours)
-    seed = np.random.randint(nrows * ncols)
     solution[nrows // 2][ncols // 2] = seed
     unallocated_parts.remove(seed)
 
@@ -263,7 +260,7 @@ def place_remaining_parts(puzzle, compatibility_matrix, best_neighbours, unalloc
                 raise ValueError('no more slots')
 
 
-def solve(image_path, nrows, ncols):
+def solve(image_path, nrows, ncols, seed):
     # load image
     image = io.imread(image_path)
 
@@ -276,7 +273,8 @@ def solve(image_path, nrows, ncols):
         itertools.chain.from_iterable(np.hsplit(r, ncols) for r in np.split(image, nrows)))
 
     # initialise solution
-    solution, compatibility_matrix, best_neighbours, unallocated_parts = initialise_solution(squares, nrows, ncols)
+    solution, compatibility_matrix, best_neighbours, unallocated_parts = initialise_solution(squares, nrows, ncols,
+                                                                                             seed)
 
     best_score = -1
     best_solution = None
@@ -389,11 +387,13 @@ if __name__ == '__main__':
 
     start_time = time.monotonic()
     image_path, nrows, ncols = sys.argv[1:4]
+    nrows, ncols = int(nrows), int(ncols)
     basename = os.path.basename(image_path)
 
     attempts = []
-    for i in range(10):
-        attempts.append(solve(image_path, int(nrows), int(ncols)))
+    seeds = np.random.choice(range(nrows * ncols), size=10, replace=False)
+    for seed in seeds:
+        attempts.append(solve(image_path, nrows, ncols, seed))
 
     best_attempt = max(attempts, key=lambda x: x[1])
     solution, score, iterations = best_attempt
