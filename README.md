@@ -41,6 +41,26 @@ taken,score,iterations`.
 $ pbpaste | python rearrange_image.py data/data_train/64/1623.png 8 8 out.png
 ```
 
+## Running in parallel entire dataset
+
+I used GNU Parallel to run the solver on the 300-600 images in each group. For
+example, to generate solutions for all the images in the
+`data/data_test2_blank/64` folder:
+
+```
+mkdir -p results/A3
+ls data/data_test2_blank/64 | parallel "python main.py data/data_test2_blank/64/{} 8 8 > results/A3/{}.txt"
+```
+
+lhis writes the solutions for each image into the `results/A3` folder while
+printing statistics to the terminal through standard error.
+
+To generate the final submission, just concatenate all the results together:
+
+```
+cat results/A3/* > results/A3.txt
+```
+
 [1]: D. Pomeranz, M. Shemesh, and O. Ben-Shahar, [A fully automated greedy square jigsaw puzzle
 solver](https://www.cs.bgu.ac.il/~ben-shahar/Publications/2011-Pomeranz_Shemesh_and_Ben_Shahar-A_Fully_Automated_Greedy_Square_Jigsaw_Puzzle_Solver.pdf),
 In the Proceedings of the IEEE International Conference on Computer Vision and Pattern Recognition
